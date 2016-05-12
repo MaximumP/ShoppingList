@@ -8,8 +8,14 @@ import android.os.ResultReceiver;
 import android.util.Log;
 
 import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+
+import shoppinglist.android.schumann.max.shoppinglist.StringValue.UrlValues;
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -33,6 +39,12 @@ public class ProductIntentService extends IntentService {
     //private static final String EXTRA_RESULT     = "max.schumann.shoppinglist.rest.product.extra.RESULT";
     private static final String EXTRA_PRODUCT_ID = "max.schumann.shoppinglist.rest.product.extra.PRODUCT_ID";
     private static final String EXTRA_LIST_LIMIT = "max.schumann.shoppinglist.rest.product.extra.LIST_LIMIT";
+
+    public static String JSON_PRODUCT_RESPONSE   = "max.schumann.shoppinglist.rest.product.json.RESPONSE";
+    public static final int     STATUS_RECEIVED       = 1;
+    public static final int     STATUS_ADDED          = 2;
+    public static final int     STATUS_UPDATED        = 3;
+    public static final int     STATUS_DELETED        = 4;
 
     public ProductIntentService() {
         super("ProductIntentService");
@@ -144,6 +156,16 @@ public class ProductIntentService extends IntentService {
         }
     }
 
+    private void handleActionGetList(int listLimit, ResultReceiver receiver) {
+        try {
+            URL url = new URL(UrlValues.SHOPPING_LIST);
+            Bundle response = executeHttpRequest(url, "GET");
+            receiver.send(STATUS_RECEIVED, response);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Handle action Foo in the provided background thread with the provided
      * parameters.
@@ -167,9 +189,49 @@ public class ProductIntentService extends IntentService {
         HttpURLConnection urlConnection    = null;
         BufferedReader    bufferedReader   = null;
         String            jsonResponse     = null;
+        Bundle            bundle           = new Bundle();
 
+        try {
+            urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection.setRequestMethod(requestMethod);
+            urlConnection.connect();
 
+            InputStream  inputStream  = urlConnection.getInputStream();
+            StringBuffer stringBuffer = new StringBuffer();
 
-        return null;
+            if (inputStream == null) {
+                bundle.putCharSequence(JSON_PRODUCT_RESPONSE, "{error: 'Empty response'}");
+                return bundle;
+            }
+
+            bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+
+            String line;
+            while((line = bufferedReader.readLine()) != null) {
+                stringBuffer.append(line);
+            }
+
+            if (stringBuffer.length() == 0){
+                bundle.putCharSequence(JSON_PRODUCT_RESPONSE, "{error: 'Empty response'}");
+                return bundle;
+            }
+
+            jsonResponse = stringBuffer.toString();
+        } catch (IOException e) {
+            Log.e("ProductIntentService", "Error", e);
+        } finally {
+            if (urlConnection != null)
+                urlConnection.disconnect();
+            if (bufferedReader != null){
+                try {
+                    bufferedReader.close();
+                } catch (IOException e) {
+                    Log.e("ProductIntentService", "Error closing stream", e);
+                }
+            }
+        }
+
+        bundle.putCharSequence(JSON_PRODUCT_RESPONSE, jsonResponse);
+        return bundle;
     }
 }
