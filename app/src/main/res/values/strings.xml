@@ -12,4 +12,5 @@
     <string name="product_list">List name</string>
     <string name="product_name_validation">Cannot be empty</string>
     <string name="action_save_product">Save product</string>
+    <string name="dash">-</string>
 </resources>

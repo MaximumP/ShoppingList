@@ -16,19 +16,18 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
 
+import shoppinglist.android.schumann.max.shoppinglist.adapter.ShoppingListAdapter;
 import shoppinglist.android.schumann.max.shoppinglist.models.Product;
 import shoppinglist.android.schumann.max.shoppinglist.rest.ProductIntentService;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-    private ListView shoppingListListView;
-    private ArrayAdapter<String> shoppingList;
+    private ShoppingListAdapter shoppingList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,12 +37,8 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        shoppingList = new ArrayAdapter<>(
-                this,
-                R.layout.shopping_list_item,
-                R.id.list_item_shopping_list_textview
-        );
-        shoppingListListView = (ListView) findViewById(R.id.shopping_list_listview);
+        shoppingList = new ShoppingListAdapter(this);
+        ListView shoppingListListView = (ListView) findViewById(R.id.shopping_list_listview);
         shoppingListListView.setAdapter(shoppingList);
         getShoppingList();
 
@@ -136,14 +131,9 @@ public class MainActivity extends AppCompatActivity
                 ArrayList<Product> products =
                         data.getParcelableArrayList(ProductIntentService.EXTRA_PRODUCTS);
 
-                ArrayList<String> testList = new ArrayList<>();
-
                 if (products != null) {
-                    for (Product product : products) {
-                        testList.add(product.getName());
-                    }
-                    shoppingList.clear();
-                    shoppingList.addAll(testList);
+
+                    shoppingList.setListItems(products);
                 }
             }
         };
@@ -157,7 +147,7 @@ public class MainActivity extends AppCompatActivity
 
             Product newProduct = data.getParcelable(ProductIntentService.EXTRA_PRODUCT);
             if (newProduct != null) {
-                shoppingList.add(newProduct.getName());
+                shoppingList.add(newProduct);
             }
         }
     };

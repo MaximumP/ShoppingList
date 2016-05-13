@@ -11,4 +11,5 @@
     <string name="product_list">Listenname</string>
     <string name="product_name_validation">Name wird benötigt</string>
     <string name="action_save_product">Produkt speichern</string>
+    <string name="dash"> - </string>
 </resources>

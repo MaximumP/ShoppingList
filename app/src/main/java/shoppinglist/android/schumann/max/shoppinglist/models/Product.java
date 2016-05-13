@@ -16,6 +16,7 @@ public class Product implements Parcelable {
     //TODO: may handle the unit as an enum on the client side
     private String unit;
     private String listName;
+    private boolean isSelected = false;
 
     public Product (String name, Double quantity, String unit, String listName) {
         this.name     = name;
@@ -73,5 +74,17 @@ public class Product implements Parcelable {
 
     public String getListName() {
         return listName;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    public void setSelected(boolean selected) {
+        isSelected = selected;
     }
 }
