@@ -68,7 +68,12 @@ public class ProductActivity extends AppCompatActivity {
             if (productName.getText().toString() == null || productName.getText().toString().length() < 1) {
                 productName.setError(getString(R.string.product_name_validation));
             } else {
-                Double quantity = Double.parseDouble(productQuantity.getText().toString());
+                String sQuantity = productQuantity.getText().toString();
+                Double quantity = 1.0;
+                if (sQuantity != null && sQuantity.length() > 0) {
+                    quantity = Double.parseDouble(sQuantity);
+                }
+
                 Product newProduct = new Product(
                         productName.getText().toString(),
                         quantity,

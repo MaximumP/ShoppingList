@@ -13,4 +13,6 @@
     <string name="product_name_validation">Cannot be empty</string>
     <string name="action_save_product">Save product</string>
     <string name="dash">-</string>
+    <string name="action_remove_shopping_cart">Finish shopping</string>
+    <string name="action_refresh_shopping_list">Refresh list</string>
 </resources>

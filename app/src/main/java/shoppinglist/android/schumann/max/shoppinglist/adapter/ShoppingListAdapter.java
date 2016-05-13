@@ -39,11 +39,27 @@ public class ShoppingListAdapter extends BaseAdapter{
 
     public void setListItems(ArrayList<Product> items) {
         this.listItems = items;
+        super.notifyDataSetChanged();
     }
 
     public void add(Product product) {
         listItems.add(product);
         super.notifyDataSetChanged();
+    }
+
+    public void remove(Product product) {
+        listItems.remove(product);
+        super.notifyDataSetChanged();
+    }
+
+    public ArrayList<Product> getSelectedItems() {
+        ArrayList<Product> selected = new ArrayList<>();
+        for (Product product: listItems){
+            if (product.isSelected()){
+                selected.add(product);
+            }
+        }
+        return selected;
     }
 
     @Override

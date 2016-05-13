@@ -12,4 +12,6 @@
     <string name="product_name_validation">Name wird benötigt</string>
     <string name="action_save_product">Produkt speichern</string>
     <string name="dash"> - </string>
+    <string name="action_remove_shopping_cart">Einkauf beenden</string>
+    <string name="action_refresh_shopping_list">Liste aktualisieren</string>
 </resources>

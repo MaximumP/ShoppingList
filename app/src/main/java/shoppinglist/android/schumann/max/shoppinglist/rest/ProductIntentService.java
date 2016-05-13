@@ -125,11 +125,11 @@ public class ProductIntentService extends IntentService {
      * @param receiver: the receiver of the server response
      * @param productId: the product to be deleted
      */
-    public static void startActionDelete(Context context, Messenger receiver, Integer productId) {
+    public static void startActionDelete(Context context, Messenger receiver, Product product) {
         Intent intent = new Intent(context, ProductIntentService.class);
         intent.setAction(ACTION_DELETE);
         intent.putExtra(EXTRA_RECEIVER, receiver);
-        intent.putExtra(EXTRA_PRODUCT_ID, productId);
+        intent.putExtra(EXTRA_PRODUCT, product);
         context.startService(intent);
     }
 
@@ -142,7 +142,7 @@ public class ProductIntentService extends IntentService {
             switch (action){
                 case ACTION_GET_LIST:
                     final int listLimit = intent.getIntExtra(EXTRA_LIST_LIMIT, 50);
-                    handleActionGetList(50, receiver);
+                    handleActionGetList(listLimit, receiver);
                     break;
                 case ACTION_GET:
                     final int productIdGet = intent.getIntExtra(EXTRA_PRODUCT_ID, -1);
@@ -155,7 +155,8 @@ public class ProductIntentService extends IntentService {
                     final String productPut = intent.getStringExtra(EXTRA_PRODUCT);
                     break;
                 case ACTION_DELETE:
-                    final int productIdDelete = intent.getIntExtra(EXTRA_PRODUCT_ID, -1);
+                    final Product productDelete = intent.getParcelableExtra(EXTRA_PRODUCT);
+                    handleActionDelete(productDelete, receiver);
                     break;
                 default:
                     Log.w("Unknown action", "ProductIntentService: unknown intent action: " + action);
@@ -199,6 +200,26 @@ public class ProductIntentService extends IntentService {
             Product newProduct = gson.fromJson(response, type);
 
             bundle.putParcelable(EXTRA_PRODUCT, newProduct);
+            message.setData(bundle);
+            receiver.send(message);
+
+        } catch (MalformedURLException e) {
+            Log.e("ProductIntentService", "Malformed Url", e);
+        } catch (RemoteException e) {
+            Log.e("ProductIntentService", "Cannot sent result message to the receiver", e);
+        }
+    }
+
+    private void handleActionDelete(Product productDelete, Messenger receiver) {
+        long id = productDelete.getId();
+        Bundle bundle = new Bundle();
+        Message message = Message.obtain();
+
+        try {
+            URL url = new URL(UrlValues.SHOPPING_LIST + "?id=" + id);
+            //TODO: check for right response code
+            String response = executeHttpRequest(url, "DELETE");
+            bundle.putParcelable(EXTRA_PRODUCT, productDelete);
             message.setData(bundle);
             receiver.send(message);
 

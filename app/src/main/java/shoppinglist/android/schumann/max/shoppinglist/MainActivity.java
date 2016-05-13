@@ -40,7 +40,8 @@ public class MainActivity extends AppCompatActivity
         shoppingList = new ShoppingListAdapter(this);
         ListView shoppingListListView = (ListView) findViewById(R.id.shopping_list_listview);
         shoppingListListView.setAdapter(shoppingList);
-        getShoppingList();
+        ProductIntentService.startActionGetList(this, new Messenger(getListHandler), 12);
+
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         if (fab != null) {
@@ -62,6 +63,12 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+    }
+
+    @Override
+    public void onResume() {
+        shoppingList.notifyDataSetChanged();
+        super.onResume();
     }
 
     @Override
@@ -89,8 +96,14 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_remove_shopping_cart) {
+            ArrayList<Product> selected = shoppingList.getSelectedItems();
+            for (Product product: selected) {
+                ProductIntentService.startActionDelete(this, new Messenger(deleteProductHandler), product);
+            }
             return true;
+        } else if (id == R.id.action_refresh_list) {
+            ProductIntentService.startActionGetList(this, new Messenger(getListHandler), 12);
         }
 
         return super.onOptionsItemSelected(item);
@@ -121,24 +134,19 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    private void getShoppingList() {
-        @SuppressLint("HandlerLeak")
-        Handler handler = new Handler() {
-            @Override
-            public void handleMessage(Message result) {
-                Bundle data = result.getData();
+    private Handler getListHandler = new Handler() {
+        @Override
+        public void handleMessage(Message result) {
+            Bundle data = result.getData();
 
-                ArrayList<Product> products =
-                        data.getParcelableArrayList(ProductIntentService.EXTRA_PRODUCTS);
+            ArrayList<Product> products =
+                    data.getParcelableArrayList(ProductIntentService.EXTRA_PRODUCTS);
 
-                if (products != null) {
-
-                    shoppingList.setListItems(products);
-                }
+            if (products != null) {
+                shoppingList.setListItems(products);
             }
-        };
-        ProductIntentService.startActionGetList(this, new Messenger(handler), 12);
-    }
+        }
+    };
 
     private Handler newProductHandler = new Handler() {
         @Override
@@ -149,6 +157,15 @@ public class MainActivity extends AppCompatActivity
             if (newProduct != null) {
                 shoppingList.add(newProduct);
             }
+        }
+    };
+
+    private Handler deleteProductHandler = new Handler() {
+        @Override
+        public void handleMessage(Message result) {
+            Bundle data = result.getData();
+            Product product = data.getParcelable(ProductIntentService.EXTRA_PRODUCT);
+            shoppingList.remove(product);
         }
     };
 }
