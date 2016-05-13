@@ -5,6 +5,8 @@ import android.os.Parcelable;
 
 /**
  * Created by max on 12.05.16.
+ *
+ * Product model
  */
 public class Product implements Parcelable {
 
@@ -56,4 +58,20 @@ public class Product implements Parcelable {
             return new Product[size];
         }
     };
+
+    public String getName() {
+        return name;
+    }
+
+    public Double getQuantity() {
+        return quantity;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public String getListName() {
+        return listName;
+    }
 }
