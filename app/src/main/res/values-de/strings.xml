@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Einkaufsliste</string>
+    <string name="action_settings">Einstellungen</string>
+    <string name="navigation_drawer_close">Drawer schließen</string>
+    <string name="navigation_drawer_open">Drawer öffnen</string>
+    <string name="title_activity_product">Produkt</string>
+    <string name="product_name">Produktname</string>
+    <string name="product_quantity">Menge</string>
+    <string name="product_unit">Einheit</string>
+    <string name="product_list">Listenname</string>
+    <string name="product_name_validation">Name wird benötigt</string>
+    <string name="action_save_product">Produkt speichern</string>
+</resources>

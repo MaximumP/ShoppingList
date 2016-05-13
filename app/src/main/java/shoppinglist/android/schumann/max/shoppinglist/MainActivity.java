@@ -1,9 +1,12 @@
 package shoppinglist.android.schumann.max.shoppinglist;
 
+import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
-import android.os.ResultReceiver;
+import android.os.Handler;
+import android.os.Message;
+import android.os.Messenger;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -17,27 +20,41 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
-import shoppinglist.android.schumann.max.shoppinglist.rest.RestResultReceiver;
+import shoppinglist.android.schumann.max.shoppinglist.models.Product;
+import shoppinglist.android.schumann.max.shoppinglist.rest.ProductIntentService;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, RestResultReceiver.Receiver {
+        implements NavigationView.OnNavigationItemSelectedListener {
+
+    private ListView shoppingListListView;
+    private ArrayAdapter<String> shoppingList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        shoppingList = new ArrayAdapter<>(
+                this,
+                R.layout.shopping_list_item,
+                R.id.list_item_shopping_list_textview
+        );
+        shoppingListListView = (ListView) findViewById(R.id.shopping_list_listview);
+        shoppingListListView.setAdapter(shoppingList);
+        getShoppingList();
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         if (fab != null) {
+            final Intent productActivityIntent = new Intent(this, ProductActivity.class);
+            productActivityIntent.putExtra(ProductActivity.EXTRA_NEW_PRODUCT_HANDLER, new Messenger(newProductHandler));
             fab.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
+                    startActivity(productActivityIntent);
                 }
             });
         }
@@ -109,29 +126,39 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    @Override
-    public void onReceiveResult(int stateCode, Bundle data) {
-        ListView shoppingListListView = (ListView) findViewById(R.id.shopping_list_listview);
-        ArrayList<String> dummyData = new ArrayList<>(Arrays.asList(
-                "First dummy",
-                "Second dummy",
-                "Third dummy",
-                "First dummy",
-                "Second dummy",
-                "Third dummy",
-                "First dummy",
-                "Second dummy",
-                "First dummy",
-                "Second dummy",
-                "Third dummy",
-                "Third dummy"
-        ));
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(
-                this,
-                R.layout.shopping_list_item,
-                R.id.list_item_shopping_list_textview,
-                dummyData
-        );
-        shoppingListListView.setAdapter(arrayAdapter);
+    private void getShoppingList() {
+        @SuppressLint("HandlerLeak")
+        Handler handler = new Handler() {
+            @Override
+            public void handleMessage(Message result) {
+                Bundle data = result.getData();
+
+                ArrayList<Product> products =
+                        data.getParcelableArrayList(ProductIntentService.EXTRA_PRODUCTS);
+
+                ArrayList<String> testList = new ArrayList<>();
+
+                if (products != null) {
+                    for (Product product : products) {
+                        testList.add(product.getName());
+                    }
+                    shoppingList.clear();
+                    shoppingList.addAll(testList);
+                }
+            }
+        };
+        ProductIntentService.startActionGetList(this, new Messenger(handler), 12);
     }
+
+    private Handler newProductHandler = new Handler() {
+        @Override
+        public void handleMessage(Message result) {
+            Bundle data = result.getData();
+
+            Product newProduct = data.getParcelable(ProductIntentService.EXTRA_PRODUCT);
+            if (newProduct != null) {
+                shoppingList.add(newProduct.getName());
+            }
+        }
+    };
 }

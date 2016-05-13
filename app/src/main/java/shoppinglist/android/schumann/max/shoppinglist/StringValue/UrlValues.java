@@ -5,7 +5,7 @@ package shoppinglist.android.schumann.max.shoppinglist.StringValue;
  */
 public class UrlValues {
 
-    private static String BASE_URL = "maximumvito.no-ip.org:8080/BudgetbookWebService/";
+    private static String BASE_URL = "http://maximumvito.no-ip.org:8080/BudgetbookWebService/";
 
     public static String SHOPPING_LIST = BASE_URL + "shoppinglist";
 }
