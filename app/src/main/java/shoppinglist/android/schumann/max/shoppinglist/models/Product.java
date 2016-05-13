@@ -15,14 +15,15 @@ public class Product implements Parcelable {
     private Double quantity = 1.0;
     //TODO: may handle the unit as an enum on the client side
     private String unit;
-    private String listName;
-    private boolean isSelected = false;
+    private String shop;
+    private Boolean isSelected = false;
 
     public Product (String name, Double quantity, String unit, String listName) {
         this.name     = name;
         this.quantity = quantity == null ? 1.0 : quantity;
         this.unit     = unit;
-        this.listName = listName;
+        this.shop = listName;
+        isSelected = false;
     }
 
     private Product(Parcel parcel) {
@@ -30,7 +31,8 @@ public class Product implements Parcelable {
         name     = parcel.readString();
         quantity = parcel.readDouble();
         unit     = parcel.readString();
-        listName = parcel.readString();
+        shop = parcel.readString();
+        isSelected = false;
     }
 
     @Override
@@ -44,7 +46,7 @@ public class Product implements Parcelable {
         parcel.writeString(name);
         parcel.writeDouble(quantity);
         parcel.writeString(unit);
-        parcel.writeString(listName);
+        parcel.writeString(shop);
     }
 
     public static final Parcelable.Creator<Product> CREATOR = new Parcelable.Creator<Product>(){
@@ -72,15 +74,17 @@ public class Product implements Parcelable {
         return unit;
     }
 
-    public String getListName() {
-        return listName;
+    public String getShop() {
+        return shop;
     }
 
     public long getId() {
         return id;
     }
 
-    public boolean isSelected() {
+    public Boolean isSelected() {
+        if (isSelected == null)
+            isSelected = false;
         return isSelected;
     }
 
