@@ -165,7 +165,7 @@ public class MainActivity extends AppCompatActivity
         public void handleMessage(Message result) {
             Bundle data = result.getData();
             Product product = data.getParcelable(ProductIntentService.EXTRA_PRODUCT);
-            shoppingList.remove(product);
+            shoppingList.remove(product.getId());
         }
     };
 }

@@ -123,7 +123,7 @@ public class ProductIntentService extends IntentService {
      *
      * @param context: the context in which the intent is performed in
      * @param receiver: the receiver of the server response
-     * @param productId: the product to be deleted
+     * @param product: the product to be deleted
      */
     public static void startActionDelete(Context context, Messenger receiver, Product product) {
         Intent intent = new Intent(context, ProductIntentService.class);
@@ -214,12 +214,23 @@ public class ProductIntentService extends IntentService {
         long id = productDelete.getId();
         Bundle bundle = new Bundle();
         Message message = Message.obtain();
+        HttpURLConnection con = null;
 
         try {
-            URL url = new URL(UrlValues.SHOPPING_LIST + "?id=" + id);
-            //TODO: check for right response code
-            String response = executeHttpRequest(url, "DELETE");
-            bundle.putParcelable(EXTRA_PRODUCT, productDelete);
+            String sUrl = UrlValues.SHOPPING_LIST + "/" + id;
+            URL url = new URL(sUrl);
+            //TODO: edit execute method so the response code can be checked
+            con = (HttpURLConnection) url.openConnection();
+            con.setRequestProperty(
+                    "Content-Type", "application/json; charset=UTF-8");
+            con.setRequestMethod("DELETE");
+            con.connect();
+            int responseCode = con.getResponseCode();
+            if (responseCode == 204) {
+                bundle.putParcelable(EXTRA_PRODUCT, productDelete);
+            } else {
+                bundle.putParcelable(EXTRA_PRODUCT, null);
+            }
             message.setData(bundle);
             receiver.send(message);
 
@@ -227,6 +238,11 @@ public class ProductIntentService extends IntentService {
             Log.e("ProductIntentService", "Malformed Url", e);
         } catch (RemoteException e) {
             Log.e("ProductIntentService", "Cannot sent result message to the receiver", e);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (con != null)
+                con.disconnect();
         }
     }
 
@@ -247,18 +263,20 @@ public class ProductIntentService extends IntentService {
         try {
             urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setRequestMethod(requestMethod);
+            urlConnection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
 
             if (body != null) {
-                urlConnection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
                 OutputStream os = urlConnection.getOutputStream();
                 os.write(body.getBytes("UTF-8"));
                 os.close();
             }
 
             urlConnection.connect();
+            if (requestMethod.equals("DELETE"))
+                return null;
 
 
-            InputStream  inputStream  = urlConnection.getInputStream();
+            InputStream  inputStream = urlConnection.getInputStream();
             StringBuilder stringBuffer = new StringBuilder();
 
             if (inputStream == null) {

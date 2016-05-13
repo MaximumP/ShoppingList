@@ -47,6 +47,13 @@ public class ShoppingListAdapter extends BaseAdapter{
         super.notifyDataSetChanged();
     }
 
+    public void remove(long id) {
+        int index = getIndexFromId(id);
+        if (index != -1)
+            listItems.remove(index);
+        super.notifyDataSetChanged();
+    }
+
     public void remove(Product product) {
         listItems.remove(product);
         super.notifyDataSetChanged();
@@ -117,5 +124,13 @@ public class ShoppingListAdapter extends BaseAdapter{
             }
         });
         notifyDataSetChanged();
+    }
+
+    private int getIndexFromId(long id) {
+        for (int i = 0; i < listItems.size(); i++) {
+            if (listItems.get(i).getId() == id)
+                return i;
+        }
+        return -1;
     }
 }
