@@ -1,19 +1,12 @@
 package shoppinglist.android.schumann.max.shoppinglist;
 
-import android.content.Intent;
+import android.content.Context;
 import android.os.Bundle;
-import android.os.Message;
 import android.os.Messenger;
-import android.provider.Telephony;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.EditText;
 
 import shoppinglist.android.schumann.max.shoppinglist.models.Product;
@@ -21,10 +14,12 @@ import shoppinglist.android.schumann.max.shoppinglist.rest.ProductIntentService;
 
 public class ProductActivity extends AppCompatActivity {
 
-    public static final String EXTRA_NEW_PRODUCT_HANDLER = "max.schumann.shoppinglist.EXTRA_NEW_PRODUCT_HANDLER";
+    public static final String EXTRA_PRODUCT_HANDLER = "max.schumann.shoppinglist.EXTRA_PRODUCT_HANDLER";
+    public static final String EXTRA_PRODUCT         = "max.schumann.shoppinglist.EXTRA_PRODUCT";
 
     private Messenger receiver;
-    private ProductActivity _this = this;
+    private Product   product;
+    private Context   context = this;
 
     private EditText productName;
     private EditText productUnit;
@@ -39,12 +34,21 @@ public class ProductActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         Bundle extras = getIntent().getExtras();
-        receiver = (Messenger) extras.get(EXTRA_NEW_PRODUCT_HANDLER);
+        receiver = (Messenger) extras.get(EXTRA_PRODUCT_HANDLER);
+        product  = (Product) extras.get(EXTRA_PRODUCT);
 
         productName     = (EditText)findViewById(R.id.product_name_editText);
         productUnit     = (EditText)findViewById(R.id.product_unit_editText);
+        //TODO: maybe a spinner is an better option
         productQuantity = (EditText)findViewById(R.id.product_quantity_editText);
         productListName = (EditText)findViewById(R.id.product_list_name_editText);
+
+        if (product != null) {
+            productName.setText(product.getName());
+            productUnit.setText(product.getUnit());
+            productQuantity.setText(product.getQuantity().toString());
+            productListName.setText(product.getShop());
+        }
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
@@ -65,37 +69,39 @@ public class ProductActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_save_product) {
+            //Product name is a mandatory field. Mark text field with error
             if (productName.getText().toString() == null || productName.getText().toString().length() < 1) {
                 productName.setError(getString(R.string.product_name_validation));
             } else {
+                // Set the quantity to the default 1.0 if the text field is empty
                 String sQuantity = productQuantity.getText().toString();
                 Double quantity = 1.0;
-                if (sQuantity != null && sQuantity.length() > 0) {
+                if (sQuantity.length() > 0) {
                     quantity = Double.parseDouble(sQuantity);
                 }
 
-                Product newProduct = new Product(
-                        productName.getText().toString(),
-                        quantity,
-                        productUnit.getText().toString(),
-                        productListName.getText().toString()
-                );
-                ProductIntentService.startActionPost(_this, receiver, newProduct);
+                // Update a product
+                if (product != null && product.getId() != -1L) {
+                    product.setName(productName.getText().toString());
+                    product.setQuantity(quantity);
+                    product.setUnit(productUnit.getText().toString());
+                    product.setShop(productListName.getText().toString());
+                    ProductIntentService.startActionPut(context, receiver, product);
+                } else {
+                    product = new Product(
+                            productName.getText().toString(),
+                            quantity,
+                            productUnit.getText().toString(),
+                            productListName.getText().toString()
+                    );
+                    ProductIntentService.startActionPost(context, receiver, product);
+                }
+
                 finish();
             }
             return true;
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
     }
 }

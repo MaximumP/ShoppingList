@@ -33,17 +33,19 @@ import shoppinglist.android.schumann.max.shoppinglist.models.Product;
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
  * a service on a separate handler thread.
+ *
+ * Offers CRUD methods for product objects
  * <p>
  * helper methods.
  */
 public class ProductIntentService extends IntentService {
 
     // Rest actions
-    private static final String ACTION_GET_LIST = "max.schumann.shoppinglist.rest.product.GET_LIST";
+    private static final String ACTION_GET_LIST  = "max.schumann.shoppinglist.rest.product.GET_LIST";
     private static final String ACTION_GET       = "max.schumann.shoppinglist.rest.product.GET";
     private static final String ACTION_POST      = "max.schumann.shoppinglist.rest.product.POST";
     private static final String ACTION_PUT       = "max.schumann.shoppinglist.rest.product.PUT";
-    private static final String ACTION_DELETE = "max.schumann.shoppinglist.rest.product.DELETE";
+    private static final String ACTION_DELETE    = "max.schumann.shoppinglist.rest.product.DELETE";
 
     // Extra parameter
     public  static final String EXTRA_PRODUCT     = "max.schumann.shoppinglist.rest.product.extra.PRODUCT";
@@ -51,6 +53,12 @@ public class ProductIntentService extends IntentService {
     private static final String EXTRA_RECEIVER    = "max.schumann.shoppinglist.rest.product.extra.RECEIVER";
     private static final String EXTRA_PRODUCT_ID  = "max.schumann.shoppinglist.rest.product.extra.PRODUCT_ID";
     private static final String EXTRA_LIST_LIMIT  = "max.schumann.shoppinglist.rest.product.extra.LIST_LIMIT";
+
+    //Http methods
+    private static final String HTTP_GET    = "GET";
+    private static final String HTTP_POST   = "POST";
+    private static final String HTTP_PUT    = "PUT";
+    private static final String HTTP_DELETE = "DELETE";
 
     public ProductIntentService() {
         super("ProductIntentService");
@@ -110,7 +118,7 @@ public class ProductIntentService extends IntentService {
      * @param product: the product to be created
      */
     //TODO: replace "String product with actual model
-    public static void startActionPut(Context context, Messenger receiver, String product) {
+    public static void startActionPut(Context context, Messenger receiver, Product product) {
         Intent intent = new Intent(context, ProductIntentService.class);
         intent.setAction(ACTION_PUT);
         intent.putExtra(EXTRA_RECEIVER, receiver);
@@ -152,23 +160,29 @@ public class ProductIntentService extends IntentService {
                     handleActionPost(productPost, receiver);
                     break;
                 case ACTION_PUT:
-                    final String productPut = intent.getStringExtra(EXTRA_PRODUCT);
+                    final Product productPut = intent.getParcelableExtra(EXTRA_PRODUCT);
+                    handleActionPut(productPut, receiver);
                     break;
                 case ACTION_DELETE:
                     final Product productDelete = intent.getParcelableExtra(EXTRA_PRODUCT);
                     handleActionDelete(productDelete, receiver);
                     break;
                 default:
-                    Log.w("Unknown action", "ProductIntentService: unknown intent action: " + action);
+                    Log.w("ProductIntentService", "Unknown intent action: " + action);
                     break;
             }
         }
     }
 
+    /**
+     * Gets the product list from the server
+     * @param listLimit: max. items return from the server
+     * @param receiver: the response receiver
+     */
     private void handleActionGetList(int listLimit, Messenger receiver) {
         try {
             URL    url      = new URL(UrlValues.SHOPPING_LIST);
-            String response = executeHttpRequest(url, "GET");
+            String response = executeHttpRequest(url, HTTP_GET);
             Bundle bundle   = new Bundle();
             Message message = Message.obtain();
 
@@ -187,6 +201,11 @@ public class ProductIntentService extends IntentService {
         }
     }
 
+    /**
+     * Creates a new product
+     * @param product to be created
+     * @param receiver: the response receiver
+     */
     private void handleActionPost(Product product, Messenger receiver) {
         Gson    gson        = new Gson();
         String  jsonProduct = gson.toJson(product);
@@ -194,10 +213,9 @@ public class ProductIntentService extends IntentService {
         Message message     = Message.obtain();
 
         try {
-            URL url = new URL(UrlValues.SHOPPING_LIST);
-            String response = executeHttpRequest(url, "POST", jsonProduct);
-            Type type = new TypeToken<Product>() {}.getType();
-            Product newProduct = gson.fromJson(response, type);
+            URL     url        = new URL(UrlValues.SHOPPING_LIST);
+            String  response   = executeHttpRequest(url, HTTP_POST, jsonProduct);
+            Product newProduct = gson.fromJson(response, Product.PRODUCT_TYPE);
 
             bundle.putParcelable(EXTRA_PRODUCT, newProduct);
             message.setData(bundle);
@@ -210,8 +228,40 @@ public class ProductIntentService extends IntentService {
         }
     }
 
-    private void handleActionDelete(Product productDelete, Messenger receiver) {
-        long id = productDelete.getId();
+    /**
+     * Updates a product
+     * @param product: the updated product model
+     * @param receiver: the response receiver
+     */
+    private void handleActionPut(Product product, Messenger receiver) {
+        Gson    gson        = new Gson();
+        String  jsonProduct = gson.toJson(product);
+        Bundle  bundle      = new Bundle();
+        Message message     = Message.obtain();
+
+        try {
+            URL     url            = new URL(UrlValues.SHOPPING_LIST);
+            String  response       = executeHttpRequest(url, HTTP_PUT, jsonProduct);
+            Product updatedProduct = gson.fromJson(response, Product.PRODUCT_TYPE);
+
+            bundle.putParcelable(EXTRA_PRODUCT, updatedProduct);
+            message.setData(bundle);
+            receiver.send(message);
+
+        } catch (MalformedURLException e) {
+            Log.e("ProductIntentService", "Malformed Url", e);
+        } catch (RemoteException e) {
+            Log.e("ProductIntentService", "Cannot sent result message to the receiver", e);
+        }
+    }
+
+    /**
+     * Deletes a product from the server list
+     * @param product to be deleted
+     * @param receiver: the response receiver
+     */
+    private void handleActionDelete(Product product, Messenger receiver) {
+        long id = product.getId();
         Bundle bundle = new Bundle();
         Message message = Message.obtain();
         HttpURLConnection con = null;
@@ -221,13 +271,12 @@ public class ProductIntentService extends IntentService {
             URL url = new URL(sUrl);
             //TODO: edit execute method so the response code can be checked
             con = (HttpURLConnection) url.openConnection();
-            con.setRequestProperty(
-                    "Content-Type", "application/json; charset=UTF-8");
-            con.setRequestMethod("DELETE");
+            con.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+            con.setRequestMethod(HTTP_DELETE);
             con.connect();
             int responseCode = con.getResponseCode();
             if (responseCode == 204) {
-                bundle.putParcelable(EXTRA_PRODUCT, productDelete);
+                bundle.putParcelable(EXTRA_PRODUCT, product);
             } else {
                 bundle.putParcelable(EXTRA_PRODUCT, null);
             }
@@ -250,10 +299,18 @@ public class ProductIntentService extends IntentService {
      * Executes a http request
      *
      * @param url: the target url
-     * @param requestMethod: the http method to be exected
-     * @return the http response body
+     * @param requestMethod: the http method to be executed
+     * @return the http response body as a json string
      */
     private String executeHttpRequest(URL url, String requestMethod) { return executeHttpRequest(url, requestMethod, null); }
+
+    /**
+     *
+     * @param url: the target url
+     * @param requestMethod: the http method to be executed
+     * @param body: the request body
+     * @return the http response as a json string
+     */
     private String executeHttpRequest(URL url, String requestMethod, String body){
 
         HttpURLConnection urlConnection    = null;
@@ -275,6 +332,7 @@ public class ProductIntentService extends IntentService {
             if (requestMethod.equals("DELETE"))
                 return null;
 
+            int responseCode = urlConnection.getResponseCode();
 
             InputStream  inputStream = urlConnection.getInputStream();
             StringBuilder stringBuffer = new StringBuilder();

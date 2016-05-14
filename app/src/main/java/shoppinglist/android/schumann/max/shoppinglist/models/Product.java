@@ -3,6 +3,10 @@ package shoppinglist.android.schumann.max.shoppinglist.models;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
+
 /**
  * Created by max on 12.05.16.
  *
@@ -16,7 +20,26 @@ public class Product implements Parcelable {
     //TODO: may handle the unit as an enum on the client side
     private String unit;
     private String shop;
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setQuantity(Double quantity) {
+        this.quantity = quantity;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
+
+    public void setShop(String shop) {
+        this.shop = shop;
+    }
+
     private Boolean isSelected = false;
+
+    public static final Type PRODUCT_TYPE = new TypeToken<Product>(){}.getType();
 
     public Product (String name, Double quantity, String unit, String listName) {
         this.name     = name;
@@ -90,5 +113,12 @@ public class Product implements Parcelable {
 
     public void setSelected(boolean selected) {
         isSelected = selected;
+    }
+
+    public void update(Product product) {
+        name = product.getName();
+        quantity = product.getQuantity();
+        unit = product.getUnit();
+        shop = product.getShop();
     }
 }

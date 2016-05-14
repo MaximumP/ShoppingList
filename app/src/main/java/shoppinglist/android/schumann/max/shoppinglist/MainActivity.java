@@ -1,6 +1,6 @@
 package shoppinglist.android.schumann.max.shoppinglist;
 
-import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -16,7 +16,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -28,6 +30,7 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private ShoppingListAdapter shoppingList;
+    private Context             context = this;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +42,7 @@ public class MainActivity extends AppCompatActivity
 
         shoppingList = new ShoppingListAdapter(this);
         ListView shoppingListListView = (ListView) findViewById(R.id.shopping_list_listview);
+        shoppingListListView.setOnItemClickListener(listItemOnClickListener);
         shoppingListListView.setAdapter(shoppingList);
         ProductIntentService.startActionGetList(this, new Messenger(getListHandler), 12);
 
@@ -46,7 +50,7 @@ public class MainActivity extends AppCompatActivity
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         if (fab != null) {
             final Intent productActivityIntent = new Intent(this, ProductActivity.class);
-            productActivityIntent.putExtra(ProductActivity.EXTRA_NEW_PRODUCT_HANDLER, new Messenger(newProductHandler));
+            productActivityIntent.putExtra(ProductActivity.EXTRA_PRODUCT_HANDLER, new Messenger(newProductHandler));
             fab.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -104,6 +108,10 @@ public class MainActivity extends AppCompatActivity
             return true;
         } else if (id == R.id.action_refresh_list) {
             ProductIntentService.startActionGetList(this, new Messenger(getListHandler), 12);
+            Toast.makeText(
+                    this,
+                    getResources().getText(R.string.toast_list_updated),
+                    Toast.LENGTH_SHORT).show();
         }
 
         return super.onOptionsItemSelected(item);
@@ -160,12 +168,34 @@ public class MainActivity extends AppCompatActivity
         }
     };
 
+    private Handler updateProductHandler = new Handler(){
+        @Override
+        public void handleMessage(Message result) {
+            Bundle data = result.getData();
+
+            Product product = data.getParcelable(ProductIntentService.EXTRA_PRODUCT);
+            shoppingList.updateProduct(product);
+        }
+    };
+
     private Handler deleteProductHandler = new Handler() {
         @Override
         public void handleMessage(Message result) {
             Bundle data = result.getData();
             Product product = data.getParcelable(ProductIntentService.EXTRA_PRODUCT);
             shoppingList.remove(product.getId());
+        }
+    };
+
+    private AdapterView.OnItemClickListener listItemOnClickListener = new AdapterView
+            .OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+            Product product = shoppingList.getItem(position);
+            final Intent intent = new Intent(context, ProductActivity.class);
+            intent.putExtra(ProductActivity.EXTRA_PRODUCT_HANDLER, new Messenger(updateProductHandler));
+            intent.putExtra(ProductActivity.EXTRA_PRODUCT, product);
+            startActivity(intent);
         }
     };
 }

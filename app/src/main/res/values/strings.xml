@@ -15,4 +15,5 @@
     <string name="dash">-</string>
     <string name="action_remove_shopping_cart">Finish shopping</string>
     <string name="action_refresh_shopping_list">Refresh list</string>
+    <string name="toast_list_updated">Shopping list updated</string>
 </resources>
